@@ -116,12 +116,17 @@ let Layer = class {
 				continue;
 			}
 
+			obj.collisions = [];
+
 			for (let obj2 of this.objects) {
 				let distance = Math.sqrt( Math.pow(obj2.x - obj.x, 2) + Math.pow(obj2.y - obj.y, 2) );
 
 				if (distance > obj.width) continue;
 
-				if (obj.shape.collides(obj2.shape)) obj.onCollide(game, obj2);
+				if (obj.shape.collides(obj2.shape, false)) {
+					obj.collisions.push(obj2.constructor.name);
+					obj.onCollide(game, obj2);
+				}
 			}
 			
 			obj.update(game);

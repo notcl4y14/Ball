@@ -8,16 +8,24 @@ let RectShape = class {
 		this.y = y;
 		this.width = width;
 		this.height = height;
+
+		this.collisions = [];
 	}
 
 	// =================================================
 
-	collides (shape) {
-		// https://love2d.org/wiki/BoundingBox.lua
-		return this.x < shape.x + shape.width &&
-			shape.x < this.x + this.width &&
-			this.y < shape.y + shape.height &&
-			shape.y < this.y + this.height;
+	collides (shape, checkCollisions = true, ignoreSelf = true) {
+		if (ignoreSelf && shape == this) return false;
+
+		if (!checkCollisions) {
+			// https://love2d.org/wiki/BoundingBox.lua
+			return this.x < shape.x + shape.width &&
+				shape.x < this.x + this.width &&
+				this.y < shape.y + shape.height &&
+				shape.y < this.y + this.height;
+		} else {
+			return this.collisions.includes(shape);
+		}
 	}
 
 	getSide (side) {
@@ -27,29 +35,40 @@ let RectShape = class {
 		else if (side == "bottom") return this.y + this.height;
 	}
 
-	sideCollides(side, shape, cut = true) {
-		cut = cut == true ? 1 : 0;
+	// sideCollides(side, shape, cut = true) {
+	// 	cut = cut == true ? 1 : 0;
 
-		if (side == "left") {
-			return this.x < shape.x + shape.width &&
-				shape.x < this.x &&
-				this.y + cut < shape.y + shape.height &&
-				shape.y < this.y + this.height - cut;
-		} else if (side == "right") {
-			return this.x + this.width < shape.x + shape.width &&
-				shape.x < this.x + this.width &&
-				this.y < shape.y + shape.height &&
-				shape.y < this.y + this.height;
-		} else if (side == "top") {
-			return this.x < shape.x + shape.width &&
-				shape.x < this.x + this.width &&
-				this.y < shape.y + shape.height &&
-				shape.y < this.y;
-		} else if (side == "bottom") {
-			return this.x < shape.x + shape.width &&
-				shape.x < this.x + this.width &&
-				this.y + this.height < shape.y + shape.height &&
-				shape.y < this.y + this.height;
+	// 	if (side == "left") {
+	// 		return this.x < shape.x + shape.width &&
+	// 			shape.x < this.x &&
+	// 			this.y + cut < shape.y + shape.height &&
+	// 			shape.y < this.y + this.height - cut;
+	// 	} else if (side == "right") {
+	// 		return this.x + this.width < shape.x + shape.width &&
+	// 			shape.x < this.x + this.width &&
+	// 			this.y + cut < shape.y + shape.height &&
+	// 			shape.y < this.y + this.height - cut;
+	// 	} else if (side == "top") {
+	// 		return this.x + cut < shape.x + shape.width &&
+	// 			shape.x < this.x + this.width - cut &&
+	// 			this.y + cut < shape.y + shape.height &&
+	// 			shape.y < this.y;
+	// 	} else if (side == "bottom") {
+	// 		return this.x + cut < shape.x + shape.width &&
+	// 			shape.x < this.x + this.width - cut &&
+	// 			this.y + this.height < shape.y + shape.height &&
+	// 			shape.y < this.y + this.height;
+	// 	}
+	// }
+
+	sideCollides(side, shape) {
+		switch (side) {
+			case "bottom":
+				return this.x < shape.x + shape.width &&
+					shape.x < this.x + this.width &&
+					this.y + this.height < shape.y + shape.height &&
+					shape.y < this.y + this.height;
+					
 		}
 	}
 
@@ -76,10 +95,6 @@ let Entity = class {
 
 	// =================================================
 
-	// get pos () {
-	// 	return this.shape.pos;
-	// }
-
 	get x () {
 		return this.shape.x;
 	}
@@ -97,7 +112,7 @@ let Entity = class {
 	}
 
 	get width () {
-		return this.shape.x;
+		return this.shape.width;
 	}
 
 	get height () {

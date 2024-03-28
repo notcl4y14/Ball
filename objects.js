@@ -47,6 +47,7 @@ let Ball = class extends Entity {
 		this.accel = 0.25;
 		this.friction = 0.25;
 		this.maxSpeed = 4;
+		this.jumpPower = -5;
 	}
 
 	// =================================================
@@ -55,19 +56,57 @@ let Ball = class extends Entity {
 	static sprite = utils_loadImage("assets/ball.png");
 
 	// =================================================
+
+	applyGravity (game) {
+		this.velX += game.gravity.x;
+		this.velY += game.gravity.y;
+	}
+
+	applyVelocity () {
+		this.x += this.velX;
+		this.y += this.velY;
+	}
+
+	addVelocity (x, y) {
+		this.velX += x;
+		this.velY += y;
+	}
+	
+	addAcceleration (accel = this.accel, x = utils_dot(this.velX), y = 0) {
+		this.velX += accel * x;
+		this.velY += accel * y;
+	}
+
+	addFriction (friction = this.friction, x = utils_dot(this.velX), y = 0) {
+		this.velX -= friction * x;
+		this.velY -= friction * y;
+	}
+
+	// =================================================
 	
 	onCollide (game, obj) {
-		if (obj instanceof Block) {
-			if (this.shape.sideCollides("bottom", obj)) {
-				this.y = obj.y - this.height;
-				this.velY = 0;
-			}
-			console.log(this.shape.sideCollides("left", obj));
-			if (this.shape.sideCollides("left", obj)) {
-				this.x = obj.x + this.width;
-				this.velX = 0;
-			}
+		if (obj.constructor.name == "Block") {
 		}
+	}
+
+	checkForHorizontalCollisions (game, obj) {
+
+		if (this.velX > 0) {
+			this.velX = 0;
+		} else if (this.velX < 0) {
+			this.velX = 0;
+		}
+
+	}
+
+	checkForVerticalCollisions (game, obj) {
+		
+		if (this.velY > 0) {
+			this.velY = 0;
+		} else if (this.velY < 0) {
+			this.velY = 0;
+		}
+
 	}
 
 	// =================================================
@@ -75,21 +114,50 @@ let Ball = class extends Entity {
 	update (game) {
 		let left = game.input.isKeyDown(game.controls.left);
 		let right = game.input.isKeyDown(game.controls.right);
+		let jump = game.input.isKeyDown(game.controls.jump);
 
 		let dirX = (right - left);
 
-		this.velX += game.gravity.x;
-		this.velY += game.gravity.y;
+		this.applyGravity(game);
 
-		this.velX += dirX * this.accel;
-		this.velX = utils_clamp(this.velX, this.maxSpeed * -1, this.maxSpeed);
-
-		if (dirX == 0) {
-			this.velX -= this.friction  * utils_dot(this.velX);
+		for (let obj of game.layout.getLayer("main").objects) {
+			let distance = Math.sqrt( Math.pow(obj.x - this.x, 2) + Math.pow(obj.y - this.y, 2) );
+			if (distance > this.width) continue;
+			this.checkForHorizontalCollisions(game, obj);
 		}
 
-		this.x += this.velX;
-		this.y += this.velY;
+		for (let obj of game.layout.getLayer("main").objects) {
+			let distance = Math.sqrt( Math.pow(obj.x - this.x, 2) + Math.pow(obj.y - this.y, 2) );
+			if (distance > this.width) continue;
+			this.checkForVerticalCollisions(game, obj);
+		}
+
+		// Acceleration
+		this.addAcceleration(this.accel, dirX);
+		
+		// Limiting speed
+		if (!game.settings.bhop || (this.collisions.includes("Block") && !jump)) {
+			this.velX = utils_clamp(this.velX, this.maxSpeed * -1, this.maxSpeed);
+		}
+
+		// Friction
+		if (dirX == 0 && this.collisions.includes("Block")) {
+			this.addFriction();
+		}
+
+		// Jump
+		if (jump && this.collisions.includes("Block")) {
+			this.velY = this.jumpPower;
+
+			if (game.settings.bhop) {
+				this.velX += utils_dot(this.velX) * 0.5;
+			}
+		}
+		
+		this.applyVelocity();
+
+		// this.x += this.velX;
+		// this.y += this.velY;
 	}
 	
 	render (game) {

@@ -36,7 +36,12 @@ let Game = function () {
 		this.input = new Input();
 		this.controls = {
 			left: "ArrowLeft",
-			right: "ArrowRight"
+			right: "ArrowRight",
+			jump: "KeyZ"
+		};
+
+		this.settings = {
+			bhop: false,
 		};
 
 		// this.layout = new Layout([new Layer("main")]);
